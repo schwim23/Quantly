@@ -1,0 +1,30 @@
+# Python
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Data — never bake DBs or model into the image; mount ./data as a volume
+data/
+
+# Secrets — never bake API keys into the image
+.env
+
+# Dev/test artefacts
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Git
+.git/
+.gitignore
+
+# Editor
+.vscode/
+.idea/
+*.swp
