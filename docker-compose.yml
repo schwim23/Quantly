@@ -1,0 +1,21 @@
+services:
+  quantly:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # SQLite DBs and model file persist across restarts
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      # Ensure the app writes to the mounted volume
+      DATA_DIR: /app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
