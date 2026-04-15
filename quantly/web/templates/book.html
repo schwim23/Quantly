@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Shadow Book — Quantly{% endblock %}
+
+{% block content %}
+<div class="mb-5 flex items-baseline justify-between">
+  <h1 class="text-2xl font-bold text-gray-900">Shadow Book</h1>
+  <span class="text-sm text-gray-500">{{ positions|length }} open position{% if positions|length != 1 %}s{% endif %}</span>
+</div>
+
+{% if not positions %}
+<div class="rounded-lg border border-dashed border-gray-300 bg-white p-12 text-center">
+  <p class="text-gray-500 text-sm">No open positions.</p>
+  <p class="text-gray-400 text-xs mt-1">Approve picks on the <a href="/" class="text-indigo-600 hover:underline">Picks</a> page to open shadow positions.</p>
+</div>
+{% else %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200 text-sm">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left font-semibold text-gray-600">Ticker</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Entry</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Current</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Stop</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Shares</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Unrealized P&L</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Max Hold</th>
+        <th class="px-4 py-3 text-center font-semibold text-gray-600">Exit</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for pos in positions %}
+      {% set pnl = pos.unrealized_pnl|float %}
+      {% set pnl_pct = pos.return_pct|float * 100 %}
+      <tr id="row-{{ pos.id }}" class="hover:bg-gray-50 transition-colors">
+        <td class="px-4 py-3 font-bold text-gray-900">{{ pos.ticker }}</td>
+        <td class="px-4 py-3 text-right text-gray-700">${{ "%.2f"|format(pos.entry_price) }}</td>
+        <td class="px-4 py-3 text-right font-medium
+          {% if pnl >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+          ${{ "%.2f"|format(pos.current_price) }}
+        </td>
+        <td class="px-4 py-3 text-right text-red-600">${{ "%.2f"|format(pos.stop_price) }}</td>
+        <td class="px-4 py-3 text-right text-gray-700">{{ pos.shares }}</td>
+        <td class="px-4 py-3 text-right font-medium
+          {% if pnl >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+          {% if pnl >= 0 %}+{% endif %}${{ "%.2f"|format(pnl) }}
+          <span class="text-xs ml-1">({% if pnl_pct >= 0 %}+{% endif %}{{ "%.1f"|format(pnl_pct) }}%)</span>
+        </td>
+        <td class="px-4 py-3 text-right text-gray-500">{{ pos.max_hold_date }}</td>
+        <!-- HTMX exit form -->
+        <td class="px-4 py-3 text-center" id="exit-cell-{{ pos.id }}">
+          <form
+            hx-post="/book/{{ pos.id }}/exit"
+            hx-target="#row-{{ pos.id }}"
+            hx-swap="innerHTML"
+            class="flex items-center justify-center gap-1">
+            <input
+              type="number"
+              name="exit_price"
+              step="0.01"
+              min="0.01"
+              placeholder="{{ "%.2f"|format(pos.current_price) }}"
+              class="w-24 text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+              required />
+            <button
+              type="submit"
+              class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded transition-colors">
+              Exit
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Performance — Quantly{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+  <h1 class="text-2xl font-bold text-gray-900">Performance</h1>
+  <p class="text-sm text-gray-500 mt-0.5">Shadow book vs SPY</p>
+</div>
+
+<!-- Metrics row -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+  {% set metrics = [
+    ("Trades", summary.trade_count),
+    ("Win Rate", (summary.win_rate * 100)|round(1)|string + "%"),
+    ("Avg Return", (summary.avg_return * 100)|round(2)|string + "%"),
+    ("Sharpe", summary.sharpe|round(2)),
+    ("Max Drawdown", (summary.max_drawdown * 100)|round(1)|string + "%"),
+    ("Portfolio Return", (summary.portfolio_return * 100)|round(1)|string + "%"),
+  ] %}
+  {% for label, value in metrics %}
+  <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
+    <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">{{ label }}</p>
+    <p class="text-xl font-bold text-gray-900 mt-1">{{ value }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- SPY comparison card -->
+{% if summary.spy_return is not none %}
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6 flex items-center gap-6">
+  <div class="text-center">
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">SPY Return</p>
+    <p class="text-2xl font-bold {% if summary.spy_return >= 0 %}text-blue-600{% else %}text-red-600{% endif %}">
+      {% if summary.spy_return >= 0 %}+{% endif %}{{ (summary.spy_return * 100)|round(1) }}%
+    </p>
+  </div>
+  <div class="text-center">
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Portfolio Return</p>
+    <p class="text-2xl font-bold {% if summary.portfolio_return >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+      {% if summary.portfolio_return >= 0 %}+{% endif %}{{ (summary.portfolio_return * 100)|round(1) }}%
+    </p>
+  </div>
+  {% set alpha = summary.portfolio_return - summary.spy_return %}
+  <div class="text-center">
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Alpha</p>
+    <p class="text-2xl font-bold {% if alpha >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+      {% if alpha >= 0 %}+{% endif %}{{ (alpha * 100)|round(1) }}%
+    </p>
+  </div>
+</div>
+{% endif %}
+
+<!-- Portfolio vs SPY chart -->
+{% if chart_data %}
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
+  <h2 class="text-sm font-semibold text-gray-700 mb-4">Portfolio vs SPY (rebased to 100)</h2>
+  <canvas id="perf-chart" height="80"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const chartData = {{ chart_data | tojson }};
+  const labels = chartData.map(d => d.date);
+  const portfolioSeries = chartData.map(d => d.portfolio);
+  const spySeries = chartData.map(d => d.spy);
+
+  new Chart(document.getElementById("perf-chart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Portfolio",
+          data: portfolioSeries,
+          borderColor: "#4f46e5",
+          backgroundColor: "rgba(79,70,229,0.08)",
+          tension: 0.3,
+          pointRadius: 1,
+          fill: true,
+        },
+        {
+          label: "SPY",
+          data: spySeries,
+          borderColor: "#94a3b8",
+          backgroundColor: "transparent",
+          tension: 0.3,
+          pointRadius: 1,
+          borderDash: [4, 4],
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "top" },
+        tooltip: { mode: "index", intersect: false },
+      },
+      scales: {
+        x: { ticks: { maxTicksLimit: 10 } },
+        y: { ticks: { callback: v => v.toFixed(0) } },
+      },
+    },
+  });
+</script>
+{% else %}
+<div class="bg-white rounded-xl border border-dashed border-gray-300 p-10 text-center mb-6">
+  <p class="text-gray-500 text-sm">No NAV history yet — chart will appear after the pipeline runs.</p>
+</div>
+{% endif %}
+
+<!-- Closed trades table -->
+<div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+  <div class="px-5 py-3 border-b border-gray-100">
+    <h2 class="text-sm font-semibold text-gray-700">Closed Trades</h2>
+  </div>
+  {% if closed_trades %}
+  <table class="min-w-full divide-y divide-gray-200 text-sm">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left font-semibold text-gray-600">Ticker</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Entry</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Exit</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Return</th>
+        <th class="px-4 py-3 text-right font-semibold text-gray-600">Shares</th>
+        <th class="px-4 py-3 text-left font-semibold text-gray-600">Entry Date</th>
+        <th class="px-4 py-3 text-left font-semibold text-gray-600">Exit Date</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for trade in closed_trades %}
+      {% set ret_pct = trade.return_pct|float * 100 %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-2 font-bold text-gray-900">{{ trade.ticker }}</td>
+        <td class="px-4 py-2 text-right text-gray-700">${{ "%.2f"|format(trade.entry_price) }}</td>
+        <td class="px-4 py-2 text-right text-gray-700">${{ "%.2f"|format(trade.exit_price) }}</td>
+        <td class="px-4 py-2 text-right font-medium
+          {% if ret_pct >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+          {% if ret_pct >= 0 %}+{% endif %}{{ "%.1f"|format(ret_pct) }}%
+        </td>
+        <td class="px-4 py-2 text-right text-gray-600">{{ trade.shares }}</td>
+        <td class="px-4 py-2 text-gray-500">{{ trade.entry_date }}</td>
+        <td class="px-4 py-2 text-gray-500">{{ trade.exit_date }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="px-5 py-10 text-center">
+    <p class="text-gray-400 text-sm">No closed trades yet.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

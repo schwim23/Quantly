@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Quantly{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="h-full flex flex-col">
+
+  <!-- Nav -->
+  <nav class="bg-gray-900 text-white shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-14">
+        <span class="text-lg font-bold tracking-tight">Quantly</span>
+        <div class="flex gap-6 text-sm font-medium">
+          <a href="/"
+             class="{% if page == 'picks' %}text-white border-b-2 border-indigo-400{% else %}text-gray-300 hover:text-white{% endif %} pb-0.5 transition-colors">
+            Today's Picks
+          </a>
+          <a href="/book"
+             class="{% if page == 'book' %}text-white border-b-2 border-indigo-400{% else %}text-gray-300 hover:text-white{% endif %} pb-0.5 transition-colors">
+            Shadow Book
+          </a>
+          <a href="/performance"
+             class="{% if page == 'performance' %}text-white border-b-2 border-indigo-400{% else %}text-gray-300 hover:text-white{% endif %} pb-0.5 transition-colors">
+            Performance
+          </a>
+        </div>
+        <!-- Manual pipeline trigger -->
+        <button
+          hx-post="/pipeline/run"
+          hx-target="#pipeline-status"
+          hx-swap="innerHTML"
+          hx-indicator="#pipeline-spinner"
+          class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-md transition-colors">
+          Run Pipeline
+        </button>
+      </div>
+    </div>
+    <!-- Status line for pipeline result -->
+    <div class="max-w-7xl mx-auto px-4 pb-1 h-5">
+      <span id="pipeline-status" class="text-xs text-gray-400"></span>
+      <span id="pipeline-spinner" class="htmx-indicator text-xs text-gray-400">Running…</span>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="text-center text-xs text-gray-400 py-3 border-t border-gray-200">
+    Shadow book only — not financial advice.
+  </footer>
+</body>
+</html>
