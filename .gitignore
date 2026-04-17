@@ -1,0 +1,24 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Local data
+data/cache/
+data/*.db
+results/
+
+# Trained model artifacts
+models/*.pkl
+models/*.json
+models/*.txt
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
