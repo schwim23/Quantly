@@ -9,6 +9,11 @@ import pandas as pd
 def compute_sharpe(returns: pd.Series, risk_free_rate: float = 0.05, periods_per_year: int = 17) -> float:
     """Annualized Sharpe ratio. periods_per_year=17 for ~15-day trade cycles."""
     if returns.std() == 0:
+        m = float(returns.mean())
+        if m > 0:
+            return 100.0
+        if m < 0:
+            return -100.0
         return 0.0
     excess = returns - risk_free_rate / periods_per_year
     return float(np.sqrt(periods_per_year) * excess.mean() / excess.std())

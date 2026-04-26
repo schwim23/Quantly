@@ -10,9 +10,13 @@ def compute_rsi(prices: pd.Series, window: int = 14) -> float:
     delta = prices.diff()
     gain = delta.clip(lower=0).rolling(window).mean()
     loss = (-delta.clip(upper=0)).rolling(window).mean()
-    rs = gain / loss.replace(0, np.nan)
-    rsi = 100 - (100 / (1 + rs))
-    return float(rsi.iloc[-1]) if not rsi.empty else float("nan")
+    last_gain = float(gain.iloc[-1])
+    last_loss = float(loss.iloc[-1])
+    if np.isnan(last_gain) or np.isnan(last_loss):
+        return float("nan")
+    if last_loss == 0:
+        return 100.0 if last_gain > 0 else 50.0
+    return float(100 - (100 / (1 + last_gain / last_loss)))
 
 
 def compute_macd(prices: pd.Series) -> dict[str, float]:

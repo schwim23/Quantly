@@ -34,8 +34,6 @@ dependencies = [
     "rich>=13.7",
     "click>=8.1",
     "python-dotenv>=1.0",
-    # Technical analysis
-    "pandas-ta>=0.3",
     # Rate limiting / retries
     "tenacity>=8.3",
 ]
